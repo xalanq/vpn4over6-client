@@ -1,0 +1,2 @@
+rootProject.name='vpn4over6'
+include ':app'
