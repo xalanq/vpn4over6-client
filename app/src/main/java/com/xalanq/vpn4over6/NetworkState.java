@@ -12,6 +12,7 @@ import java.net.Inet6Address;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+import java.util.Locale;
 
 class NetworkState {
     static final private String TAG = "NetworkState";
@@ -21,15 +22,30 @@ class NetworkState {
     private NetworkInfo networkInfo;
     private String ipv4;
     private String ipv6;
+    private long startTime;
 
     private NetworkState() {}
 
     static NetworkState getInstance() {
         if (instance == null) {
             instance = new NetworkState();
-            instance.ipv4 = "未知";
+            instance.reset();
         }
         return instance;
+    }
+
+    NetworkState reset() {
+        networkInfo = null;
+        hasIPV6 = false;
+        ipv4 = "未知";
+        ipv6 = "未知";
+        startTime = 0;
+        return this;
+    }
+
+    NetworkState start(@NonNull Context context) {
+        startTime = System.currentTimeMillis();
+        return this;
     }
 
     NetworkState update(@NonNull Context context) {
@@ -65,6 +81,17 @@ class NetworkState {
     }
 
     void updateUI(@NonNull TextView textView) {
+        String runningTime = "未运行";
+        if (startTime != 0) {
+            long diff = (System.currentTimeMillis() - startTime) / 1000;
+            long H = diff / 60 / 60;
+            diff -= H * 60 * 60;
+            long M = diff / 60;
+            diff -= M * 60;
+            long S = diff;
+            runningTime = String.format(Locale.CHINESE, "%02d:%02d:%02d", H, M, S);
+        }
+
         String networkState = "未知";
         if (networkInfo != null) {
             if (networkInfo.isConnected()) {
@@ -85,9 +112,11 @@ class NetworkState {
         }
         textView.setText(
             String.format(
-                "网络状态: %s   是否支持 IPV6: %s\n" +
+                "运行时间: %s\n" +
+                    "网络状态: %s   是否支持 IPV6: %s\n" +
                     "下联 IPV4 地址: %s\n" +
                     "上联 IPV6 地址: %s\n",
+                runningTime,
                 networkState,
                 hasIPV6 ? "是" : "否",
                 ipv4,
