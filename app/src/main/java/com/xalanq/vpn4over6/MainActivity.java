@@ -17,6 +17,7 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
     TextView textViewNetwork;
+    TextView textViewFlow;
     SwitchMaterial trigger;
     Timer timer;
 
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
         textViewNetwork = findViewById(R.id.network);
+        textViewFlow = findViewById(R.id.flow);
     }
 
     @Override
@@ -53,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     void updateUI() {
         NetworkState.getInstance().update(this).updateUI(textViewNetwork);
+        FlowState.getInstance().update(this).updateUI(textViewFlow);
     }
 
     @Override

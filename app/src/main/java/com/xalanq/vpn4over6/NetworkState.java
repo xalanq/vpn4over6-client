@@ -112,6 +112,7 @@ class NetworkState {
         }
         textView.setText(
             String.format(
+                Locale.CHINESE,
                 "运行时间: %s\n" +
                     "网络状态: %s   是否支持 IPV6: %s\n" +
                     "下联 IPV4 地址: %s\n" +
