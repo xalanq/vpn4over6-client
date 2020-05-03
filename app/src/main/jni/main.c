@@ -21,6 +21,7 @@
 #define TYPE_IP 2
 
 int local_fd;
+int fd;
 int running;
 
 int local_write_msg(int type, const char *msg) {
@@ -51,6 +52,24 @@ int local_ip(const char *msg) {
     return local_write_msg(TYPE_IP, msg);
 }
 
+int local_read_fd() {
+    int len = 10;
+    int c = 0;
+    char *buf = (char *)malloc(len + 1);
+    while (c < len) {
+        LOGD("read c: %d, len: %d", c, len);
+        int t = read(local_fd, buf + c, len - c);
+        if (t < 0) {
+            return -1;
+        }
+        c += t;
+    }
+    buf[len] = '\0';
+    unsigned int a;
+    sscanf(buf, "%x", &a);
+    return a;
+}
+
 JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jclass thiz, jstring ip, jint port) {
     LOGD("serve");
     running = 1;
@@ -67,8 +86,14 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jcla
             }
             sleep(1);
         } else if (c == 5) {
-            if (local_off("超时啦") < 0) {
+            if ((fd = local_read_fd()) < 0) {
                 return -1;
+            }
+            LOGD("fd: %d", fd);
+            sleep(1);
+        } else if (c == 6) {
+            if (local_off("超时啦") < 0) {
+                return 0;
             }
             break;
         }

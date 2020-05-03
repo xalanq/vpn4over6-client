@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Scanner;
 
 class DataLoader {
@@ -19,8 +20,11 @@ class DataLoader {
     private Thread threadBackend;
     private boolean running;
     private LocalServerSocket serverSocket;
+    private LocalSocket socket;
+    private Handler handler;
 
-    DataLoader() {
+    DataLoader(Handler handler) {
+        this.handler = handler;
         try {
             serverSocket = new LocalServerSocket(SOCKET_NAME);
         } catch (IOException e) {
@@ -28,12 +32,11 @@ class DataLoader {
         }
     }
 
-    void start(final Handler handler) {
+    void start() {
         running = true;
         threadLocal = new Thread() {
             @Override
             public void run() {
-                LocalSocket socket = null;
                 try {
                     Log.d(TAG, "run: listening");
                     socket = serverSocket.accept();
@@ -43,6 +46,9 @@ class DataLoader {
                         int type = in.nextInt();
                         Log.d(TAG, String.format("run: type: %d", type));
                         switch (type) {
+                            case TYPE_OFF:
+                                handler.sendMessage(DataHandler.off(in.nextLine().substring(1)));
+                                break;
                             case TYPE_LOG:
                                 handler.sendMessage(DataHandler.log(in.nextLine().substring(1)));
                                 break;
@@ -54,13 +60,10 @@ class DataLoader {
                                 String dns3 = in.next();
                                 handler.sendMessage(DataHandler.ip(ip, route, dns1, dns2, dns3));
                                 break;
-                            case TYPE_OFF:
-                                handler.sendMessage(DataHandler.off(in.nextLine().substring(1)));
-                                break;
                             default:
                         }
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     Log.e(TAG, "run: exception" + e.toString());
                     handler.sendMessage(DataHandler.off(e.toString()));
                 } finally {
@@ -92,16 +95,36 @@ class DataLoader {
                         throw new RuntimeException("后台终止");
                     }
                 } catch (Exception e) {
+                    Log.e(TAG, "run: " + e.toString());
                     try {
                         sleep(500);
                     } catch (Exception ee) {
-                        Log.d(TAG, "run: " + ee.toString());
+                        Log.e(TAG, "run: " + ee.toString());
                     }
                     handler.sendMessage(DataHandler.off(e.getMessage()));
                 }
             }
         };
         threadBackend.start();
+    }
+
+    void writeFd(final int fd) {
+        new Thread() {
+            @Override
+            public void run() {
+                Log.d(TAG, "run: write fd");
+                try {
+                    PrintWriter out = new PrintWriter(socket.getOutputStream());
+                    out.write(String.format("0x%08x", fd));
+                    out.flush();
+                    out.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "run: " + e.toString());
+                    handler.sendMessage(DataHandler.off(e.getMessage()));
+                }
+                Log.d(TAG, "run: write fd done");
+            }
+        }.start();
     }
 
     void destroy() {

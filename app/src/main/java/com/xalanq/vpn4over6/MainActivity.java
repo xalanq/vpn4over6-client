@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         textViewLog.setMovementMethod(new ScrollingMovementMethod());
         textViewLog.setTextIsSelectable(true);
         handler = new DataHandler(this);
-        loader = new DataLoader();
+        loader = new DataLoader(handler);
     }
 
     @Override
