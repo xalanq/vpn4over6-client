@@ -52,10 +52,6 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     handler.sendMessage(DataHandler.off("关闭..."));
                 }
-                if (timer != null)  {
-                    timer.cancel();
-                }
-                startTimer();
             }
         });
         return true;

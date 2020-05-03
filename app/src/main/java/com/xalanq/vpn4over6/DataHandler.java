@@ -38,6 +38,10 @@ public class DataHandler extends Handler {
                     activity.trigger.setChecked(true);
                     NetworkState.getInstance().start();
                     activity.loader.start(this);
+                    if (activity.timer != null)  {
+                        activity.timer.cancel();
+                    }
+                    activity.startTimer();
                     break;
                 case MSG_OFF:
                     view.append((String) msg.obj);
@@ -45,6 +49,10 @@ public class DataHandler extends Handler {
                     NetworkState.getInstance().reset();
                     FlowState.getInstance().reset();
                     activity.loader.stop();
+                    if (activity.timer != null)  {
+                        activity.timer.cancel();
+                    }
+                    activity.startTimer();
                     break;
                 case MSG_IP:
                     view.append(msg.obj.toString());
