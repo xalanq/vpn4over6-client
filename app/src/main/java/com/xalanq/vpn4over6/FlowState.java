@@ -9,7 +9,8 @@ import java.util.Locale;
 
 class FlowState {
     private static FlowState instance;
-    class State {
+
+    static class State {
         long totalBytes;
         long totalPackets;
         long bytesPerSecond;
@@ -20,7 +21,7 @@ class FlowState {
 
     private FlowState() {}
 
-    public static FlowState getInstance() {
+    static FlowState getInstance() {
         if (instance == null) {
             instance = new FlowState();
             instance.reset();
@@ -28,34 +29,28 @@ class FlowState {
         return instance;
     }
 
-    FlowState reset() {
+    void reset() {
         upload = new State();
         download = new State();
-        return this;
-    }
-
-    FlowState start(@NonNull Context context) {
-        return this;
     }
 
     FlowState update(@NonNull Context context) {
        return this;
     }
 
-    FlowState updateUI(@NonNull TextView textView) {
+    void updateUI(@NonNull TextView textView) {
         textView.setText(
             String.format(
-                Locale.CHINESE,
-                "上传: %d 个包  %d 字节  %d B/s\n" +
-                    "下载: %d 个包  %d 字节  %d B/s\n",
+                Locale.CHINA,
+                "上传: %d 个包 / %d 字节 / %d B/s\n" +
+                    "下载: %d 个包 / %d 字节 / %d B/s\n",
                 upload.totalPackets,
-                upload.totalPackets,
+                upload.totalBytes,
                 upload.bytesPerSecond,
                 download.totalPackets,
-                download.totalPackets,
+                download.totalBytes,
                 download.bytesPerSecond
             )
         );
-        return this;
     }
 }

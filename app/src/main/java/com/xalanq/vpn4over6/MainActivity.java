@@ -4,7 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.os.Bundle;
-import android.os.Handler;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
@@ -18,8 +18,11 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity {
     TextView textViewNetwork;
     TextView textViewFlow;
+    TextView textViewLog;
     SwitchMaterial trigger;
     Timer timer;
+    DataHandler handler;
+    DataLoader loader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +31,11 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
         textViewNetwork = findViewById(R.id.network);
         textViewFlow = findViewById(R.id.flow);
+        textViewLog = findViewById(R.id.log);
+        textViewLog.setMovementMethod(new ScrollingMovementMethod());
+        textViewLog.setTextIsSelectable(true);
+        handler = new DataHandler(this);
+        loader = new DataLoader();
     }
 
     @Override
@@ -40,9 +48,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    NetworkState.getInstance().start(MainActivity.this);
+                    handler.sendMessage(DataHandler.log("启动！"));
+                    NetworkState.getInstance().start();
+                    loader.start(handler);
                 } else {
+                    handler.sendMessage(DataHandler.log("关闭..."));
                     NetworkState.getInstance().reset();
+                    FlowState.getInstance().reset();
+                    loader.stop();
                 }
                 if (timer != null)  {
                     timer.cancel();

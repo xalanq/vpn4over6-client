@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">vpn4over6</string>
+    <string name="log">日志输出: </string>
 </resources>

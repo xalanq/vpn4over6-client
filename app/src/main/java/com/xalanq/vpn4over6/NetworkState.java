@@ -34,18 +34,16 @@ class NetworkState {
         return instance;
     }
 
-    NetworkState reset() {
+    void reset() {
         networkInfo = null;
         hasIPV6 = false;
         ipv4 = "未知";
         ipv6 = "未知";
         startTime = 0;
-        return this;
     }
 
-    NetworkState start(@NonNull Context context) {
+    void start() {
         startTime = System.currentTimeMillis();
-        return this;
     }
 
     NetworkState update(@NonNull Context context) {
@@ -112,7 +110,7 @@ class NetworkState {
         }
         textView.setText(
             String.format(
-                Locale.CHINESE,
+                Locale.CHINA,
                 "运行时间: %s\n" +
                     "网络状态: %s   是否支持 IPV6: %s\n" +
                     "下联 IPV4 地址: %s\n" +
