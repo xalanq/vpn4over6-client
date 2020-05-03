@@ -53,7 +53,6 @@ class NetworkState {
     private void updateNetworkState(@NonNull Context context) {
         networkInfo = null;
         hasIPV6 = false;
-        ipv6 = "未知";
         final ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null) {
             networkInfo = cm.getActiveNetworkInfo();
