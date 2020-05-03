@@ -48,14 +48,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    handler.sendMessage(DataHandler.log("启动！"));
-                    NetworkState.getInstance().start();
-                    loader.start(handler);
+                    handler.sendMessage(DataHandler.on("启动！"));
                 } else {
-                    handler.sendMessage(DataHandler.log("关闭..."));
-                    NetworkState.getInstance().reset();
-                    FlowState.getInstance().reset();
-                    loader.stop();
+                    handler.sendMessage(DataHandler.off("关闭..."));
                 }
                 if (timer != null)  {
                     timer.cancel();
@@ -101,5 +96,11 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         }, 0, 1000);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        loader.destroy();
     }
 }

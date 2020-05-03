@@ -15,13 +15,12 @@ import java.util.Enumeration;
 import java.util.Locale;
 
 class NetworkState {
-    static final private String TAG = "NetworkState";
     private static NetworkState instance;
 
     private boolean hasIPV6;
     private NetworkInfo networkInfo;
-    private String ipv4;
     private String ipv6;
+    private int ipv6port;
     private long startTime;
 
     private NetworkState() {}
@@ -37,8 +36,8 @@ class NetworkState {
     void reset() {
         networkInfo = null;
         hasIPV6 = false;
-        ipv4 = "未知";
-        ipv6 = "未知";
+        ipv6 = "2402:f000:1:4417::900";
+        ipv6port = 5678;
         startTime = 0;
     }
 
@@ -74,7 +73,7 @@ class NetworkState {
                 }
             }
         } catch (Exception e) {
-            Log.d(TAG, "updateNetworkState: " + e.toString());
+            Log.d("NetworkState", "updateNetworkState: " + e.toString());
         }
     }
 
@@ -113,14 +112,16 @@ class NetworkState {
                 Locale.CHINA,
                 "运行时间: %s\n" +
                     "网络状态: %s   是否支持 IPV6: %s\n" +
-                    "下联 IPV4 地址: %s\n" +
-                    "上联 IPV6 地址: %s\n",
+                    "服务器 IPV6 地址: %s  端口: %d\n",
                 runningTime,
                 networkState,
                 hasIPV6 ? "是" : "否",
-                ipv4,
-                ipv6
+                ipv6,
+                ipv6port
             )
         );
     }
+
+    String getIpv6() { return ipv6; }
+    int getIpv6port() { return ipv6port; }
 }

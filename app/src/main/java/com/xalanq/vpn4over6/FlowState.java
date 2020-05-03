@@ -16,6 +16,29 @@ class FlowState {
         long bytesPerSecond;
     }
 
+    static class VPNState {
+        String ip;
+        String route;
+        String dns1;
+        String dns2;
+        String dns3;
+
+        VPNState(String ip, String route, String dns1, String dns2, String dns3) {
+            this.ip = ip;
+            this.route = route;
+            this.dns1 = dns1;
+            this.dns2 = dns2;
+            this.dns3 = dns3;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return String.format(Locale.CHINA,
+                "ip: %s, route: %s, dns1: %s, dns2: %s, dns3: %s", ip, route, dns1, dns2, dns3);
+        }
+    }
+
     private State upload;
     private State download;
 
