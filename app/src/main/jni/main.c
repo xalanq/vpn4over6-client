@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <errno.h>
@@ -15,30 +16,63 @@
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-#define TYPE_CLOSE = 0;
-#define TYPE_LOG = 1;
-#define TYPE_IP = 2;
+#define TYPE_OFF 0
+#define TYPE_LOG 1
+#define TYPE_IP 2
 
-char *SOCKET_NAME;
 int local_fd;
 int running;
+
+int local_write_msg(int type, const char *msg) {
+    char *buf = (char *)malloc(strlen(msg) + 3 + 2);
+    sprintf(buf, "%d %s\n", type, msg);
+    LOGD("write message: %s", buf);
+    int len = strlen(buf);
+    int c = 0;
+    while (c < len) {
+        int t = write(local_fd, buf + c, len - c);
+        if (t < 0) {
+            return -1;
+        }
+        c += t;
+    }
+    return c;
+}
+
+int local_off(const char *msg) {
+    return local_write_msg(TYPE_OFF, msg);
+}
+
+int local_log(const char *msg) {
+    return local_write_msg(TYPE_LOG, msg);
+}
+
+int local_ip(const char *msg) {
+    return local_write_msg(TYPE_IP, msg);
+}
 
 JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jclass thiz, jstring ip, jint port) {
     LOGD("serve");
     running = 1;
     int c = 0;
     while (running) {
-        sleep(1);
-        LOGD("xalanq test");
-        char buf[15] = "1 test\n";
-        int r = write(local_fd, buf, strlen(buf) * sizeof(char));
-        if (r < 0) {
-            return -1;
+        if (c < 3) {
+            if (local_log("test") < 0) {
+                return -1;
+            }
+            sleep(1);
+        } else if (c == 4) {
+            if (local_ip("13.8.0.2 0.0.0.0 202.38.120.242 8.8.8.8 202.106.0.20") < 0) {
+                return -1;
+            }
+            sleep(1);
+        } else if (c == 5) {
+            if (local_off("超时啦") < 0) {
+                return -1;
+            }
+            break;
         }
         c++;
-        if (c >= 5) {
-            return -1;
-        }
     }
     return 0;
 }

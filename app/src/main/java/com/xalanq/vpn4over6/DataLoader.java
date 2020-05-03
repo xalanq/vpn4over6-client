@@ -11,7 +11,7 @@ import java.util.Scanner;
 class DataLoader {
     static private final String TAG = "DataLoader";
     static private final String SOCKET_NAME = "com.xalanq.vpn4over6";
-    static private final int TYPE_CLOSE = 0;
+    static private final int TYPE_OFF = 0;
     static private final int TYPE_LOG = 1;
     static private final int TYPE_IP = 2;
 
@@ -44,7 +44,7 @@ class DataLoader {
                         Log.d(TAG, String.format("run: type: %d", type));
                         switch (type) {
                             case TYPE_LOG:
-                                handler.sendMessage(DataHandler.log(in.nextLine()));
+                                handler.sendMessage(DataHandler.log(in.nextLine().substring(1)));
                                 break;
                             case TYPE_IP:
                                 String ip = in.next();
@@ -54,8 +54,8 @@ class DataLoader {
                                 String dns3 = in.next();
                                 handler.sendMessage(DataHandler.ip(ip, route, dns1, dns2, dns3));
                                 break;
-                            case TYPE_CLOSE:
-                                running = false;
+                            case TYPE_OFF:
+                                handler.sendMessage(DataHandler.off(in.nextLine().substring(1)));
                                 break;
                             default:
                         }
@@ -92,7 +92,12 @@ class DataLoader {
                         throw new RuntimeException("后台终止");
                     }
                 } catch (Exception e) {
-                    handler.sendMessage(DataHandler.off(e.toString()));
+                    try {
+                        sleep(500);
+                    } catch (Exception ee) {
+                        Log.d(TAG, "run: " + ee.toString());
+                    }
+                    handler.sendMessage(DataHandler.off(e.getMessage()));
                 }
             }
         };
