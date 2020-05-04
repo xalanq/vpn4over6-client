@@ -15,6 +15,8 @@ import java.util.Enumeration;
 import java.util.Locale;
 
 class NetworkState {
+    private static final String TAG = NetworkState.class.getSimpleName();
+
     private static NetworkState instance;
 
     private boolean hasIPV6;
@@ -72,7 +74,7 @@ class NetworkState {
                 }
             }
         } catch (Exception e) {
-            Log.d("NetworkState", "updateNetworkState: " + e.toString());
+            Log.d(TAG, "updateNetworkState: " + e.toString());
         }
     }
 

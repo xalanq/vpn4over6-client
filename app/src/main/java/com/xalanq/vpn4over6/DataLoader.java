@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 import java.util.Scanner;
 
 class DataLoader {
-    static private final String TAG = "DataLoader";
+    static private final String TAG = DataLoader.class.getSimpleName();
     static private final String SOCKET_NAME = "com.xalanq.vpn4over6";
     static private final int TYPE_OFF = 0;
     static private final int TYPE_LOG = 1;
@@ -32,19 +32,20 @@ class DataLoader {
         }
     }
 
-    void start() {
+    void connect() {
+        Log.d(TAG, "connect");
         running = true;
         threadLocal = new Thread() {
             @Override
             public void run() {
                 try {
-                    Log.d(TAG, "run: listening");
+                    Log.d(TAG, "connect: listening");
                     socket = serverSocket.accept();
-                    Log.d(TAG, "run: accepted!");
+                    Log.d(TAG, "connect: accepted!");
                     Scanner in = new Scanner(socket.getInputStream());
-                    while (running) {
+                    while (running && in.hasNextInt()) {
                         int type = in.nextInt();
-                        Log.d(TAG, String.format("run: type: %d", type));
+                        Log.d(TAG, String.format("connect: type: %d", type));
                         switch (type) {
                             case TYPE_OFF:
                                 handler.sendMessage(DataHandler.off(in.nextLine().substring(1)));
@@ -53,26 +54,23 @@ class DataLoader {
                                 handler.sendMessage(DataHandler.log(in.nextLine().substring(1)));
                                 break;
                             case TYPE_IP:
-                                String ip = in.next();
-                                String route = in.next();
-                                String dns1 = in.next();
-                                String dns2 = in.next();
-                                String dns3 = in.next();
-                                handler.sendMessage(DataHandler.ip(ip, route, dns1, dns2, dns3));
+                                handler.sendMessage(DataHandler.ip(in.nextLine().substring(1)));
                                 break;
                             default:
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "run: exception" + e.toString());
+                    Log.e(TAG, "connect: exception" + e.toString());
+                    e.printStackTrace();
                     handler.sendMessage(DataHandler.off(e.toString()));
                 } finally {
                     if (socket != null) {
                         try {
                             socket.close();
-                            Log.d(TAG, "run: close socket");
+                            Log.d(TAG, "connect: close socket");
                         } catch(Exception e){
-                            Log.e(TAG, "run: close socket " + e.toString());
+                            Log.e(TAG, "connect: close socket " + e.toString());
+                            e.printStackTrace();
                             handler.sendMessage(DataHandler.off(e.toString()));
                         }
                     }
@@ -95,11 +93,13 @@ class DataLoader {
                         throw new RuntimeException("后台终止");
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "run: " + e.toString());
+                    Log.e(TAG, "connect: " + e.toString());
+                    e.printStackTrace();
                     try {
                         sleep(500);
                     } catch (Exception ee) {
-                        Log.e(TAG, "run: " + ee.toString());
+                        Log.e(TAG, "connect: " + ee.toString());
+                        e.printStackTrace();
                     }
                     handler.sendMessage(DataHandler.off(e.getMessage()));
                 }
@@ -138,9 +138,9 @@ class DataLoader {
         }
     }
 
-    void stop() {
+    void disconnect() {
+        Log.d(TAG, "disconnect");
         running = false;
-        Log.d("xalanq", "stop: ");
         if (threadLocal != null) {
             threadLocal.interrupt();
             threadLocal = null;

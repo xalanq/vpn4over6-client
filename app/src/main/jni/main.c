@@ -48,8 +48,10 @@ int local_log(const char *msg) {
     return local_write_msg(TYPE_LOG, msg);
 }
 
-int local_ip(const char *msg) {
-    return local_write_msg(TYPE_IP, msg);
+int local_ip(const char *msg, int fd) {
+    char *buf = (char *)malloc(strlen(msg) + 15);
+    sprintf(buf, "%s %d", msg, fd);
+    return local_write_msg(TYPE_IP, buf);
 }
 
 int local_read_fd() {
@@ -81,7 +83,7 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jcla
             }
             sleep(1);
         } else if (c == 4) {
-            if (local_ip("13.8.0.2 0.0.0.0 202.38.120.242 8.8.8.8 202.106.0.20") < 0) {
+            if (local_ip("13.8.0.2 0.0.0.0 202.38.120.242 8.8.8.8 202.106.0.20", local_fd) < 0) {
                 return -1;
             }
             sleep(1);
