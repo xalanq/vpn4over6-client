@@ -152,4 +152,5 @@ fail:
 JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_stop (JNIEnv *env, jclass thiz) {
     LOGD("stop");
     running = 0;
+    close(local_fd);
 }
