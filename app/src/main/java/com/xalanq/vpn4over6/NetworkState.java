@@ -67,7 +67,6 @@ class NetworkState {
                     for (InterfaceAddress address: ni.getInterfaceAddresses()) {
                         if (address.getAddress() instanceof Inet6Address) {
                             hasIPV6 = true;
-                            ipv6 = address.getAddress().toString();
                             break;
                         }
                     }
