@@ -25,17 +25,19 @@ int init_local_fd(const char *socket_name) {
     int count;
     socklen_t len;
 
+    LOGD("local socket init");
+
+    local_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
+
+    if (local_fd < 0) {
+        LOGE("Cannot create local socket");
+        goto fail;
+    }
+
     addr.sun_family = AF_LOCAL;
     addr.sun_path[0] = '\0';
     strcpy(&addr.sun_path[1], socket_name);
     len = offsetof(struct sockaddr_un, sun_path) + 1 + strlen(&addr.sun_path[1]);
-
-    LOGD("local socket init");
-    local_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
-
-    if (local_fd < 0) {
-        goto fail;
-    }
 
     usleep(100000);
 
@@ -58,9 +60,11 @@ int init_local_fd(const char *socket_name) {
 
 fail:
     err = errno;
-    LOGE("%s: connect() failed: %s (%d)\n",
+    LOGE("%s: init_local_fd failed: %s (%d)\n",
         __FUNCTION__, strerror(err), err);
     errno = err;
+    if (local_fd >= 0)
+        close(local_fd);
     return -1;
 }
 

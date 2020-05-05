@@ -9,10 +9,10 @@ extern "C" {
 #endif
 /*
  * Class:     com_xalanq_vpn4over6_Backend
- * Method:    serve
+ * Method:    connect
  * Signature: (Ljava/lang/String;I)I
  */
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve
+JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connect
   (JNIEnv *, jclass, jstring, jint);
 
 /*
@@ -22,6 +22,30 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve
  */
 JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connectLocalSocket
   (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_xalanq_vpn4over6_Backend
+ * Method:    schedule
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_schedule
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_xalanq_vpn4over6_Backend
+ * Method:    listeningServer
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_listeningServer
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_xalanq_vpn4over6_Backend
+ * Method:    listeningClient
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_listeningClient
+  (JNIEnv *, jclass);
 
 /*
  * Class:     com_xalanq_vpn4over6_Backend

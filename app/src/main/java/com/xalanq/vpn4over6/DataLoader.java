@@ -17,7 +17,7 @@ class DataLoader {
     static private final int TYPE_IP = 2;
 
     private Thread threadLocal;
-    private Thread threadBackend;
+    private Thread threadBackendInit;
     private boolean running;
     private LocalServerSocket serverSocket;
     private LocalSocket socket;
@@ -79,7 +79,7 @@ class DataLoader {
         };
         threadLocal.start();
 
-        threadBackend = new Thread() {
+        threadBackendInit = new Thread() {
             @Override
             public void run() {
                 try {
@@ -88,9 +88,9 @@ class DataLoader {
                         throw new RuntimeException("日志初始化出错");
                     }
                     final NetworkState s = NetworkState.getInstance();
-                    ret = Backend.serve(s.getIpv6(), s.getIpv6port());
+                    ret = Backend.connect(s.getIpv6(), s.getIpv6port());
                     if (ret != 0) {
-                        throw new RuntimeException("后台终止");
+                        throw new RuntimeException("后台初始化出错");
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "connect: " + e.toString());
@@ -105,7 +105,7 @@ class DataLoader {
                 }
             }
         };
-        threadBackend.start();
+        threadBackendInit.start();
     }
 
     void writeFd(final int fd) {
@@ -145,9 +145,9 @@ class DataLoader {
             threadLocal.interrupt();
             threadLocal = null;
         }
-        if (threadBackend != null) {
-            threadBackend.interrupt();
-            threadBackend = null;
+        if (threadBackendInit != null) {
+            threadBackendInit.interrupt();
+            threadBackendInit = null;
             Backend.stop();
         }
     }

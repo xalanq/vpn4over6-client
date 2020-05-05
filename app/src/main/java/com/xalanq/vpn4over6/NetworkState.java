@@ -38,7 +38,7 @@ class NetworkState {
     void reset() {
         networkInfo = null;
         hasIPV6 = false;
-        ipv6 = "2402:f000:1:4417::900";
+        ipv6 = "2402:f000:4:72:808::9a47";
         ipv6port = 5678;
         startTime = 0;
     }
