@@ -2,6 +2,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "log.h"
 
@@ -11,16 +14,58 @@ int get_local_fd() {
     return local_fd;
 }
 
-void set_local_fd(int fd) {
-    local_fd = fd;
-}
-
 void close_local_fd() {
     close(local_fd);
 }
 
+int init_local_fd(const char *socket_name) {
+    LOGD("connect local socket");
+    int err;
+    struct sockaddr_un addr;
+    int count;
+    socklen_t len;
+
+    addr.sun_family = AF_LOCAL;
+    addr.sun_path[0] = '\0';
+    strcpy(&addr.sun_path[1], socket_name);
+    len = offsetof(struct sockaddr_un, sun_path) + 1 + strlen(&addr.sun_path[1]);
+
+    LOGD("local socket init");
+    local_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
+
+    if (local_fd < 0) {
+        goto fail;
+    }
+
+    usleep(100000);
+
+    count = 0;
+    while (count < 5) {
+        LOGD("local socket connect try %d", count);
+        if (connect(local_fd, (struct sockaddr *) &addr, len) < 0) {
+            count++;
+            LOGD("sleep 1");
+            sleep(1);
+        }
+        break;
+    }
+    if (count == 5) {
+        goto fail;
+    }
+    LOGD("local socket connect successfully!");
+
+    return 0;
+
+fail:
+    err = errno;
+    LOGE("%s: connect() failed: %s (%d)\n",
+        __FUNCTION__, strerror(err), err);
+    errno = err;
+    return -1;
+}
+
 int local_write(const char *format, ...) {
-    char* buf;
+    char *buf;
     int len, c;
     va_list args;
 

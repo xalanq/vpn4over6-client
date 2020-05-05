@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <errno.h>
 
 #include "com_xalanq_vpn4over6_Backend.h"
 #include "log.h"
@@ -48,52 +47,8 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jcla
 }
 
 JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connectLocalSocket(JNIEnv *env, jclass thiz, jstring socket_name) {
-    LOGD("connect local socket");
-    int err;
-    struct sockaddr_un addr;
-    int local_fd;
-    int count;
-    socklen_t len;
     const char *name = (*env)->GetStringUTFChars(env, socket_name, JNI_FALSE);
-
-    addr.sun_family = AF_LOCAL;
-    addr.sun_path[0] = '\0';
-    strcpy(&addr.sun_path[1], name);
-    len = offsetof(struct sockaddr_un, sun_path) + 1 + strlen(&addr.sun_path[1]);
-
-    LOGD("local socket init");
-    local_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
-
-    if (local_fd < 0) {
-        goto fail;
-    }
-
-    usleep(100000);
-
-    count = 0;
-    while (count < 5) {
-        LOGD("local socket connect try %d", count);
-        if (connect(local_fd, (struct sockaddr *) &addr, len) < 0) {
-            count++;
-            LOGD("sleep 1");
-            sleep(1);
-        }
-        break;
-    }
-    if (count == 5) {
-        goto fail;
-    }
-    LOGD("local socket connect successfully!");
-    set_local_fd(local_fd);
-
-    return 0;
-
-fail:
-    err = errno;
-    LOGE("%s: connect() failed: %s (%d)\n",
-        __FUNCTION__, strerror(err), err);
-    errno = err;
-    return -1;
+    return init_local_fd(name);
 }
 
 JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_stop (JNIEnv *env, jclass thiz) {

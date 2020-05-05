@@ -14,7 +14,7 @@
 #define local_ip(format, arg...) local_write("%d " format "\n", TYPE_IP, ##arg)
 
 int get_local_fd();
-void set_local_fd(int fd);
 void close_local_fd();
 int local_write(const char *format, ...);
 int local_read_fd();
+int init_local_fd();
