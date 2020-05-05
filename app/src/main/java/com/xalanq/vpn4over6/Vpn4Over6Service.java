@@ -89,6 +89,10 @@ public class Vpn4Over6Service extends VpnService {
         }
     }
 
+    void run() {
+        loader.run();
+    }
+
     ///////// Listener
 
     public interface Listener {

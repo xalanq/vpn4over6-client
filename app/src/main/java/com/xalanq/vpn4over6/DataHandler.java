@@ -8,9 +8,10 @@ import androidx.annotation.NonNull;
 import java.lang.ref.WeakReference;
 
 public class DataHandler extends Handler {
-    static private final int MSG_OFF = 0;
-    static private final int MSG_LOG = 1;
-    static private final int MSG_IP = 2;
+    static final int MSG_OFF = 0;
+    static final int MSG_LOG = 1;
+    static final int MSG_IP = 2;
+    static final int MSG_RUN = 3;
 
     private WeakReference<Vpn4Over6Service> serviceWeakReference;
 
@@ -35,6 +36,9 @@ public class DataHandler extends Handler {
                     service.listener.log(data);
                     service.writeFd(data);
                     break;
+                case MSG_RUN:
+                    service.listener.log((String) msg.obj);
+                    service.run();
                 default:
                     break;
             }
@@ -58,6 +62,13 @@ public class DataHandler extends Handler {
     static Message ip(String msg) {
         Message m = new Message();
         m.what = MSG_IP;
+        m.obj = msg;
+        return m;
+    }
+
+    static Message run(String msg) {
+        Message m = new Message();
+        m.what = MSG_RUN;
         m.obj = msg;
         return m;
     }

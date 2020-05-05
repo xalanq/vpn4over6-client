@@ -2,37 +2,39 @@
 #include "logger.h"
 #include "client.h"
 
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_clientConnect
-    (JNIEnv *env, jclass thiz, jstring ip, jint port) {
-
-    LOGD("%s", __FUNCTION__);
-    return client_connect((*env)->GetStringUTFChars(env, ip, JNI_FALSE), (int)port);
-}
-
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_loggerConnect
+JNIEXPORT int JNICALL Java_com_xalanq_vpn4over6_Backend_loggerConnect
     (JNIEnv *env, jclass thiz, jstring socket_name) {
 
     LOGD("%s", __FUNCTION__);
     return logger_connect((*env)->GetStringUTFChars(env, socket_name, JNI_FALSE));
 }
 
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_schedule
-    (JNIEnv *env, jclass thiz) {
-    return 0;
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_clientConnect
+    (JNIEnv *env, jclass thiz, jstring ip, jint port) {
+
+    LOGD("%s", __FUNCTION__);
+    client_connect((*env)->GetStringUTFChars(env, ip, JNI_FALSE), (int)port);
 }
 
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_listeningServer
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_listeningServer
     (JNIEnv *env, jclass thiz) {
 
     LOGD("%s", __FUNCTION__);
-    return 0;
+    client_listen_server();
 }
 
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_listeningClient
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_listeningClient
     (JNIEnv *env, jclass thiz) {
 
     LOGD("%s", __FUNCTION__);
-    return 0;
+    client_listen_client();
+}
+
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_schedule
+    (JNIEnv *env, jclass thiz) {
+
+    LOGD("%s", __FUNCTION__);
+    client_schedule();
 }
 
 JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_disconnect
@@ -42,4 +44,3 @@ JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_disconnect
     client_disconnect();
     logger_disconnect();
 }
-

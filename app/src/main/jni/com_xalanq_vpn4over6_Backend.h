@@ -9,14 +9,6 @@ extern "C" {
 #endif
 /*
  * Class:     com_xalanq_vpn4over6_Backend
- * Method:    clientConnect
- * Signature: (Ljava/lang/String;I)I
- */
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_clientConnect
-  (JNIEnv *, jclass, jstring, jint);
-
-/*
- * Class:     com_xalanq_vpn4over6_Backend
  * Method:    loggerConnect
  * Signature: (Ljava/lang/String;)I
  */
@@ -25,26 +17,34 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_loggerConnect
 
 /*
  * Class:     com_xalanq_vpn4over6_Backend
- * Method:    schedule
- * Signature: ()I
+ * Method:    clientConnect
+ * Signature: (Ljava/lang/String;I)V
  */
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_schedule
-  (JNIEnv *, jclass);
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_clientConnect
+  (JNIEnv *, jclass, jstring, jint);
 
 /*
  * Class:     com_xalanq_vpn4over6_Backend
  * Method:    listeningServer
- * Signature: ()I
+ * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_listeningServer
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_listeningServer
   (JNIEnv *, jclass);
 
 /*
  * Class:     com_xalanq_vpn4over6_Backend
  * Method:    listeningClient
- * Signature: ()I
+ * Signature: ()V
  */
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_listeningClient
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_listeningClient
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_xalanq_vpn4over6_Backend
+ * Method:    schedule
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_xalanq_vpn4over6_Backend_schedule
   (JNIEnv *, jclass);
 
 /*

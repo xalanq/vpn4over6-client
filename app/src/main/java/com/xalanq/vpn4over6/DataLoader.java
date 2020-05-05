@@ -12,9 +12,6 @@ import java.util.Scanner;
 class DataLoader {
     static private final String TAG = DataLoader.class.getSimpleName();
     static private final String SOCKET_NAME = "com.xalanq.vpn4over6";
-    static private final int TYPE_OFF = 0;
-    static private final int TYPE_LOG = 1;
-    static private final int TYPE_IP = 2;
 
     private Thread threadLocal;
     private Thread threadBackendInit;
@@ -47,14 +44,17 @@ class DataLoader {
                         int type = in.nextInt();
                         Log.d(TAG, String.format("connect: type: %d", type));
                         switch (type) {
-                            case TYPE_OFF:
+                            case DataHandler.MSG_OFF:
                                 handler.sendMessage(DataHandler.off(in.nextLine().substring(1)));
                                 break;
-                            case TYPE_LOG:
+                            case DataHandler.MSG_LOG:
                                 handler.sendMessage(DataHandler.log(in.nextLine().substring(1)));
                                 break;
-                            case TYPE_IP:
+                            case DataHandler.MSG_IP:
                                 handler.sendMessage(DataHandler.ip(in.nextLine().substring(1)));
+                                break;
+                            case DataHandler.MSG_RUN:
+                                handler.sendMessage(DataHandler.run(in.nextLine().substring(1)));
                                 break;
                             default:
                         }
@@ -62,7 +62,7 @@ class DataLoader {
                 } catch (Exception e) {
                     Log.e(TAG, "connect: exception" + e.toString());
                     e.printStackTrace();
-                    handler.sendMessage(DataHandler.off(e.toString()));
+                    handler.sendMessage(DataHandler.off(e.getMessage()));
                 } finally {
                     if (socket != null) {
                         try {
@@ -71,7 +71,7 @@ class DataLoader {
                         } catch(Exception e){
                             Log.e(TAG, "connect: close socket " + e.toString());
                             e.printStackTrace();
-                            handler.sendMessage(DataHandler.off(e.toString()));
+                            handler.sendMessage(DataHandler.off(e.getMessage()));
                         }
                     }
                 }
@@ -88,10 +88,7 @@ class DataLoader {
                         throw new RuntimeException("日志初始化出错");
                     }
                     final NetworkState s = NetworkState.getInstance();
-                    ret = Backend.clientConnect(s.getIpv6(), s.getIpv6port());
-                    if (ret != 0) {
-                        throw new RuntimeException("后台初始化出错");
-                    }
+                    Backend.clientConnect(s.getIpv6(), s.getIpv6port());
                 } catch (Exception e) {
                     Log.e(TAG, "connect: " + e.toString());
                     e.printStackTrace();
@@ -112,17 +109,38 @@ class DataLoader {
         new Thread() {
             @Override
             public void run() {
-                Log.d(TAG, "run: write fd");
+                Log.d(TAG, "writeFd: write fd");
                 try {
                     PrintWriter out = new PrintWriter(socket.getOutputStream());
                     out.write(String.format("0x%08x", fd));
                     out.flush();
-                    out.close();
                 } catch (Exception e) {
-                    Log.e(TAG, "run: " + e.toString());
+                    Log.e(TAG, "writeFd: " + e.toString());
+                    e.printStackTrace();
                     handler.sendMessage(DataHandler.off(e.getMessage()));
                 }
-                Log.d(TAG, "run: write fd done");
+                Log.d(TAG, "writeFd: write fd done");
+            }
+        }.start();
+    }
+
+    void run() {
+        new Thread() {
+            @Override
+            public void run() {
+                Backend.listeningClient();
+            }
+        }.start();
+        new Thread() {
+            @Override
+            public void run() {
+                Backend.listeningServer();
+            }
+        }.start();
+        new Thread() {
+            @Override
+            public void run() {
+                Backend.schedule();
             }
         }.start();
     }

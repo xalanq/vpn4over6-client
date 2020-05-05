@@ -55,7 +55,7 @@ int logger_connect(const char *socket_name) {
 
 fail:
     err = errno;
-    LOGE("init_fd failed: %s (%d)", strerror(err), err);
+    LOGE("%s failed: %s (%d)\n", __FUNCTION__, strerror(err), err);
     errno = err;
     if (fd >= 0)
         close(fd);
