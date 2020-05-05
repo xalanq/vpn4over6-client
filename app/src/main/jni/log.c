@@ -7,6 +7,7 @@
 #include <sys/un.h>
 
 #include "log.h"
+#include "io.h"
 
 int local_fd;
 
@@ -60,8 +61,7 @@ int init_local_fd(const char *socket_name) {
 
 fail:
     err = errno;
-    LOGE("%s: init_local_fd failed: %s (%d)\n",
-        __FUNCTION__, strerror(err), err);
+    LOGE("init_local_fd failed: %s (%d)", strerror(err), err);
     errno = err;
     if (local_fd >= 0)
         close(local_fd);
@@ -80,38 +80,28 @@ int local_write(const char *format, ...) {
 
     if (buf != NULL) {
         LOGD("local write: %s", buf);
-        len = strlen(buf);
-        c = 0;
-        while (c < len) {
-            int t = write(local_fd, buf + c, len - c);
-            if (t < 0) {
-                free(buf);
-                return -1;
-            }
-            c += t;
+        int len = strlen(buf);
+        if (write_all(local_fd, buf, len) < 0) {
+            free(buf);
+            return -1;
         }
         free(buf);
-        return c;
+        return len;
     }
     return -1;
 }
 
 int local_read_fd() {
     int len = 10;
-    int c = 0;
     char *buf = (char *)malloc(len + 1);
-    while (c < len) {
-        LOGD("read c: %d, len: %d", c, len);
-        int t = read(local_fd, buf + c, len - c);
-        if (t < 0) {
-            free(buf);
-            return -1;
-        }
-        c += t;
+    if (read_all(local_fd, buf, len) < 0) {
+        free(buf);
+        return -1;
     }
     buf[len] = '\0';
     unsigned int a;
     sscanf(buf, "%x", &a);
     free(buf);
+    LOGD("local read fd %d", a);
     return a;
 }

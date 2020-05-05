@@ -10,75 +10,10 @@
 
 #include "com_xalanq_vpn4over6_Backend.h"
 #include "log.h"
+#include "msg.h"
 
 int fd;
 int running;
-
-#define MSG_IP_REQUEST 100
-#define MSG_IP_RESPONSE 101
-#define MSG_NET_REQUEST 102
-#define MSG_NET_RESPONSE 103
-#define MSG_KEEP_ALIVE 104
-
-struct Msg {
-    int length;
-    char type;
-    char data[4096];
-};
-
-/*
-http://www.cplusplus.com/forum/general/200941/
-
-A lock is not required; send() is a syscall, it is an atomic operation with no race conditions in the kernel.
-
-Note that datagram sockets (UDP) are connection-less, so the the datagram packets may be delivered in a sequence
-that is different from the sequence in which they were sent (even if all the send calls were from within a single thread).
-
-For stream sockets (TCP) too, the send() function is atomic; but there is no concept of distinct messages or packets,
-the data treated as a single stream of bytes. So even though send() is thread-safe, synchronisation is required to
-ensure that the bytes from different send calls are merged into the byte stream in a predictable manner.
-
-https://stackoverflow.com/questions/13021796/simultaneously-read-and-write-on-the-same-socket-in-c-or-c
-
-I dont need to worry about multiple threads read and writing from the same socket as there will be a single dedicated
-read and single dedicated write thread writing to the socket. In the above scenario, is any kind of locking required?
-
-No.
-*/
-
-int read_all(int fd, void *buf, int len) {
-    int c = 0, t;
-    while (c < len) {
-        t = read(fd, ((char *)buf) + c, len - c);
-        if (t < 0)
-            return -1;
-        c += t;
-    }
-    return c;
-}
-
-int read_msg(struct Msg *msg) {
-    if (read_all(fd, msg, 5) < 0)
-        return -1;
-    if (read_all(fd, ((char *)msg) + 5, msg->length - 5) < 0)
-        return -1;
-    return msg->length;
-}
-
-int write_all(int fd, void *buf, int len) {
-    int c = 0, t;
-    while (c < len) {
-        t = write(fd, ((char *)buf) + c, len - c);
-        if (t < 0)
-            return -1;
-        c += t;
-    }
-    return c;
-}
-
-int write_msg(struct Msg *msg) {
-    return write_all(fd, msg, msg->length);
-}
 
 JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connect(JNIEnv *env, jclass thiz, jstring _ip, jint _port) {
     LOGD("serve");
@@ -113,13 +48,13 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connect(JNIEnv *env, jc
     msg.length = 5;
     msg.type = MSG_IP_REQUEST;
 
-    if (write_msg(&msg) < 0) {
+    if (write_msg(fd, &msg) < 0) {
         local_off("无法发出 IP 请求");
         goto fail;
     }
 
     do {
-        if (read_msg(&msg) < 0) {
+        if (read_msg(fd, &msg) < 0) {
             local_off("读取数据包出错");
             goto fail;
         }
