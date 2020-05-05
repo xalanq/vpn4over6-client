@@ -83,12 +83,12 @@ class DataLoader {
             @Override
             public void run() {
                 try {
-                    int ret = Backend.connectLocalSocket(SOCKET_NAME);
+                    int ret = Backend.loggerConnect(SOCKET_NAME);
                     if (ret != 0) {
                         throw new RuntimeException("日志初始化出错");
                     }
                     final NetworkState s = NetworkState.getInstance();
-                    ret = Backend.connect(s.getIpv6(), s.getIpv6port());
+                    ret = Backend.clientConnect(s.getIpv6(), s.getIpv6port());
                     if (ret != 0) {
                         throw new RuntimeException("后台初始化出错");
                     }
@@ -148,7 +148,7 @@ class DataLoader {
         if (threadBackendInit != null) {
             threadBackendInit.interrupt();
             threadBackendInit = null;
-            Backend.stop();
+            Backend.disconnect();
         }
     }
 }

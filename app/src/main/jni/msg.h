@@ -10,5 +10,5 @@ struct Msg {
     char data[4096];
 };
 
-int read_msg(int fd, struct Msg *msg);
-int write_msg(int fd, struct Msg *msg);
+int msg_read(int fd, struct Msg *msg);
+int msg_write(int fd, struct Msg *msg);

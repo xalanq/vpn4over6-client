@@ -6,34 +6,28 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "log.h"
+#include "logger.h"
 #include "io.h"
 
-int local_fd;
+static int fd;
 
-int get_local_fd() {
-    return local_fd;
-}
-
-void close_local_fd() {
-    close(local_fd);
-}
-
-int init_local_fd(const char *socket_name) {
-    LOGD("connect local socket");
+int logger_connect(const char *socket_name) {
+    LOGD("connect logger socket");
     int err;
     struct sockaddr_un addr;
     int count;
     socklen_t len;
 
-    LOGD("local socket init");
+    LOGD("logger socket init");
 
-    local_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
+    fd = socket(PF_LOCAL, SOCK_STREAM, 0);
 
-    if (local_fd < 0) {
-        LOGE("Cannot create local socket");
+    if (fd < 0) {
+        LOGE("Cannot create logger socket");
         goto fail;
     }
+
+    LOGD("Created logger socket %d", fd);
 
     addr.sun_family = AF_LOCAL;
     addr.sun_path[0] = '\0';
@@ -44,8 +38,8 @@ int init_local_fd(const char *socket_name) {
 
     count = 0;
     while (count < 5) {
-        LOGD("local socket connect try %d", count);
-        if (connect(local_fd, (struct sockaddr *) &addr, len) < 0) {
+        LOGD("logger socket connect try %d", count);
+        if (connect(fd, (struct sockaddr *) &addr, len) < 0) {
             count++;
             LOGD("sleep 1");
             sleep(1);
@@ -55,20 +49,24 @@ int init_local_fd(const char *socket_name) {
     if (count == 5) {
         goto fail;
     }
-    LOGD("local socket connect successfully!");
+    LOGD("logger socket connect successfully!");
 
     return 0;
 
 fail:
     err = errno;
-    LOGE("init_local_fd failed: %s (%d)", strerror(err), err);
+    LOGE("init_fd failed: %s (%d)", strerror(err), err);
     errno = err;
-    if (local_fd >= 0)
-        close(local_fd);
+    if (fd >= 0)
+        close(fd);
     return -1;
 }
 
-int local_write(const char *format, ...) {
+void logger_disconnect() {
+    close(fd);
+}
+
+int logger_write(const char *format, ...) {
     char *buf;
     int len, c;
     va_list args;
@@ -79,9 +77,9 @@ int local_write(const char *format, ...) {
     va_end(args);
 
     if (buf != NULL) {
-        LOGD("local write: %s", buf);
+        LOGD("logger %d write: %s", fd, buf);
         int len = strlen(buf);
-        if (write_all(local_fd, buf, len) < 0) {
+        if (write_all(fd, buf, len) < 0) {
             free(buf);
             return -1;
         }
@@ -91,10 +89,14 @@ int local_write(const char *format, ...) {
     return -1;
 }
 
-int local_read_fd() {
+int logger_fd() {
+    return fd;
+}
+
+int logger_read_fd() {
     int len = 10;
     char *buf = (char *)malloc(len + 1);
-    if (read_all(local_fd, buf, len) < 0) {
+    if (read_all(fd, buf, len) < 0) {
         free(buf);
         return -1;
     }
@@ -102,6 +104,6 @@ int local_read_fd() {
     unsigned int a;
     sscanf(buf, "%x", &a);
     free(buf);
-    LOGD("local read fd %d", a);
+    LOGD("logger read fd %d", a);
     return a;
 }
