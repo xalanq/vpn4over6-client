@@ -24,34 +24,36 @@ int local_fd;
 int fd;
 int running;
 
-int local_write_msg(int type, const char *msg) {
-    char *buf = (char *)malloc(strlen(msg) + 3 + 2);
-    sprintf(buf, "%d %s\n", type, msg);
-    LOGD("write message: %s", buf);
-    int len = strlen(buf);
-    int c = 0;
-    while (c < len) {
-        int t = write(local_fd, buf + c, len - c);
-        if (t < 0) {
-            return -1;
+#define local_off(format, arg...) local_write("%d " format "\n", TYPE_OFF, ##arg)
+#define local_log(format, arg...) local_write("%d " format "\n", TYPE_LOG, ##arg)
+#define local_ip(format, arg...) local_write("%d " format "\n", TYPE_IP, ##arg)
+
+int local_write(const char *format, ...) {
+    char* buf;
+    int len, c;
+    va_list args;
+
+    va_start(args, format);
+    if (vasprintf(&buf, format, args) < 0)
+        buf = NULL;
+    va_end(args);
+
+    if (buf != NULL) {
+        LOGD("local write: %s", buf);
+        len = strlen(buf);
+        c = 0;
+        while (c < len) {
+            int t = write(local_fd, buf + c, len - c);
+            if (t < 0) {
+                free(buf);
+                return -1;
+            }
+            c += t;
         }
-        c += t;
+        free(buf);
+        return c;
     }
-    return c;
-}
-
-int local_off(const char *msg) {
-    return local_write_msg(TYPE_OFF, msg);
-}
-
-int local_log(const char *msg) {
-    return local_write_msg(TYPE_LOG, msg);
-}
-
-int local_ip(const char *msg, int fd) {
-    char *buf = (char *)malloc(strlen(msg) + 15);
-    sprintf(buf, "%s %d", msg, fd);
-    return local_write_msg(TYPE_IP, buf);
+    return -1;
 }
 
 int local_read_fd() {
@@ -62,6 +64,7 @@ int local_read_fd() {
         LOGD("read c: %d, len: %d", c, len);
         int t = read(local_fd, buf + c, len - c);
         if (t < 0) {
+            free(buf);
             return -1;
         }
         c += t;
@@ -69,11 +72,17 @@ int local_read_fd() {
     buf[len] = '\0';
     unsigned int a;
     sscanf(buf, "%x", &a);
+    free(buf);
     return a;
 }
 
-JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jclass thiz, jstring ip, jint port) {
+JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jclass thiz, jstring _ip, jint _port) {
+    const char *ip = (*env)->GetStringUTFChars(env, _ip, JNI_FALSE);
+    int port = (int)_port;
+
     LOGD("serve");
+    local_log("开始连接服务器 [%s]:%d", ip, port);
+
     running = 1;
     int c = 0;
     while (running) {
@@ -83,7 +92,7 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_serve(JNIEnv *env, jcla
             }
             sleep(1);
         } else if (c == 4) {
-            if (local_ip("13.8.0.2 0.0.0.0 202.38.120.242 8.8.8.8 202.106.0.20", local_fd) < 0) {
+            if (local_ip("13.8.0.2 0.0.0.0 202.38.120.242 8.8.8.8 202.106.0.20 %d", local_fd) < 0) {
                 return -1;
             }
             sleep(1);
@@ -116,7 +125,7 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connectLocalSocket(JNIE
     strcpy(&addr.sun_path[1], name);
     len = offsetof(struct sockaddr_un, sun_path) + 1 + strlen(&addr.sun_path[1]);
 
-    LOGD("socket init");
+    LOGD("local socket init");
     local_fd = socket(PF_LOCAL, SOCK_STREAM, 0);
 
     if (local_fd < 0) {
@@ -127,9 +136,10 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connectLocalSocket(JNIE
 
     int count = 0;
     while (count < 5) {
-        LOGD("socket connect try %d", count);
+        LOGD("local socket connect try %d", count);
         if (connect(local_fd, (struct sockaddr *) &addr, len) < 0) {
             count++;
+            LOGD("sleep 1");
             sleep(1);
         }
         break;
@@ -137,7 +147,7 @@ JNIEXPORT jint JNICALL Java_com_xalanq_vpn4over6_Backend_connectLocalSocket(JNIE
     if (count == 5) {
         goto fail;
     }
-    LOGD("socket connect successfully!");
+    LOGD("local socket connect successfully!");
 
     return 0;
 
