@@ -90,8 +90,7 @@ class DataLoader {
                     if (ret != 0) {
                         throw new RuntimeException("日志初始化出错");
                     }
-                    final NetworkState s = NetworkState.getInstance();
-                    Backend.clientConnect(s.getIpv6(), s.getIpv6port());
+                    Backend.clientConnect(Vpn4Over6Service.IPv6, Vpn4Over6Service.IPv6Port);
                 } catch (Exception e) {
                     Log.e(TAG, "connect: " + e.toString());
                     e.printStackTrace();

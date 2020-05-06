@@ -1,7 +1,5 @@
 package com.xalanq.vpn4over6;
 
-import androidx.annotation.NonNull;
-
 import java.util.Locale;
 
 class FlowStat {
@@ -41,13 +39,18 @@ class FlowStat {
         return String.format(Locale.CHINA, "%.1f GB", bytes / 1024.0 / 1024.0 / 1024.0);
     }
 
-    @NonNull
-    @Override
-    public String toString() {
+    String getFlowStat(String runningTime, String IPv4) {
         return String.format(
             Locale.CHINA,
-            "上传: %d 个包 / %s / %s/s\n" +
+            "运行时间: %s\n" +
+                "服务器 IPv6 地址: [%s]:%d\n" +
+                "VPN IPv4 地址: %s\n" +
+                "上传: %d 个包 / %s / %s/s\n" +
                 "下载: %d 个包 / %s / %s/s\n",
+            runningTime == null ? "未运行" : runningTime,
+            Vpn4Over6Service.IPv6,
+            Vpn4Over6Service.IPv6Port,
+            IPv4 == null ? "未知" : IPv4,
             uploadTotalPackets,
             parseBytes(uploadTotalBytes),
             parseBytes(uploadBytesPerSec),

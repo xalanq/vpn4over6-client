@@ -2,7 +2,6 @@ package com.xalanq.vpn4over6;
 
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -46,7 +45,6 @@ public class DataHandler extends Handler {
                     break;
                 case MSG_STAT:
                     String s = (String)msg.obj;
-                    Log.d("GGGG", "handleMessage: " + s);
                     Scanner in = new Scanner(new StringReader(s));
                     service.listener.stat(new FlowStat(
                         in.nextLong(),

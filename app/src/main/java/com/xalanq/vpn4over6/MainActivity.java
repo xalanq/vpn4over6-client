@@ -4,9 +4,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.ConnectivityManager;
 import android.net.VpnService;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -23,8 +27,6 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
     static private final String TAG = MainActivity.class.getSimpleName();
@@ -33,10 +35,10 @@ public class MainActivity extends AppCompatActivity {
     TextView textViewFlow;
     private TextView textViewLog;
     private SwitchMaterial trigger;
-    private Timer timer;
     private ServiceConnection vpn4Over6ServiceConnection;
     private Vpn4Over6Service vpn4Over6Service;
-    private boolean running;
+    private long startTime;
+    BroadcastReceiver br;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +50,16 @@ public class MainActivity extends AppCompatActivity {
         textViewLog = findViewById(R.id.log);
         textViewLog.setMovementMethod(new ScrollingMovementMethod());
         textViewLog.setTextIsSelectable(true);
-        textViewFlow.setText(new FlowStat().toString());
-        running = false;
+        textViewFlow.setText(new FlowStat().getFlowStat(null, null));
+        br = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                textViewNetwork.setText(NetworkState.getNetworkState(context));
+            }
+        };
+        final IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(br, intentFilter);
     }
 
     @Override
@@ -100,25 +110,15 @@ public class MainActivity extends AppCompatActivity {
     void connect() {
         Log.d(TAG, "connect");;
         log("启动！");
-        running = true;
+        startTime = System.currentTimeMillis();
         vpn4Over6Service.connect();
-        NetworkState.getInstance().start();
-        if (timer != null)  {
-            timer.cancel();
-        }
-        startTimer();
     }
 
     void disconnect() {
         Log.d(TAG, "disconnect");
-        running = false;
         vpn4Over6Service.disconnect();
-        NetworkState.getInstance().reset();
-        textViewFlow.setText(new FlowStat().toString());
-        if (timer != null)  {
-            timer.cancel();
-        }
-        startTimer();
+        textViewFlow.setText(new FlowStat().getFlowStat(null, null));
+        startTime = 0;
         unbindService(vpn4Over6ServiceConnection);
         log("关闭...");
     }
@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void log(String msg) {
                             Log.d(TAG, "listener log: " + msg);
-                            if (running) {
+                            if (startTime != 0) {
                                 MainActivity.this.log(msg);
                             }
                         }
@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void off(String msg) {
                             Log.d(TAG, "listener off: " + msg);
-                            if (running) {
+                            if (startTime != 0) {
                                 MainActivity.this.log(msg);
                                 trigger.setChecked(false);
                             }
@@ -155,8 +155,16 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void stat(FlowStat stat) {
                             Log.d(TAG, "listener stat: " + stat.toString());
-                            if (running) {
-                                textViewFlow.setText(stat.toString());
+                            if (startTime != 0) {
+                                String runningTime = "未运行";
+                                long diff = (System.currentTimeMillis() - startTime) / 1000;
+                                long H = diff / 60 / 60;
+                                diff -= H * 60 * 60;
+                                long M = diff / 60;
+                                diff -= M * 60;
+                                long S = diff;
+                                runningTime = String.format(Locale.CHINESE, "%02d:%02d:%02d", H, M, S);
+                                textViewFlow.setText(stat.getFlowStat(runningTime, vpn4Over6Service.VpnIPv4));
                             }
                         }
                     });
@@ -173,38 +181,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             super.onActivityResult(request, result, data);
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (timer == null) {
-            startTimer();
-        }
-    }
-
-    void startTimer() {
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        NetworkState.getInstance().update(MainActivity.this).updateUI(textViewNetwork);
-                    }
-                });
-            }
-        }, 0, 1000);
     }
 
     @Override

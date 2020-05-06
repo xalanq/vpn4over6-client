@@ -10,11 +10,14 @@ import java.io.StringReader;
 import java.util.Scanner;
 
 public class Vpn4Over6Service extends VpnService {
-    private static final String TAG = Vpn4Over6Service.class.getSimpleName();
+    static private final String TAG = Vpn4Over6Service.class.getSimpleName();
+    static final String IPv6 = "2402:f000:4:72:808::9a47";
+    static final int IPv6Port = 5678;
 
     private ParcelFileDescriptor tunnel;
     private DataHandler handler;
     private DataLoader loader;
+    String VpnIPv4;
 
     @Override
     public void onCreate() {
@@ -46,6 +49,7 @@ public class Vpn4Over6Service extends VpnService {
             }
             tunnel = null;
         }
+        VpnIPv4 = null;
         loader.disconnect();
     }
 
@@ -58,6 +62,7 @@ public class Vpn4Over6Service extends VpnService {
         String dns1 = in.next();
         String dns2 = in.next();
         String dns3 = in.next();
+        VpnIPv4 = ip;
         int fd = in.nextInt();
 
         protect(fd);
