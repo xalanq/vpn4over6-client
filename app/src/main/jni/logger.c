@@ -79,7 +79,7 @@ int logger_write(const char *format, ...) {
     if (buf != NULL) {
         LOGD("logger %d write: %s", fd, buf);
         int len = strlen(buf);
-        if (write_all(fd, buf, len) < 0) {
+        if (write_all(fd, buf, len) != 0) {
             free(buf);
             return -1;
         }
@@ -96,7 +96,7 @@ int logger_fd() {
 int logger_read_fd() {
     int len = 10;
     char *buf = (char *)malloc(len + 1);
-    if (read_all(fd, buf, len) < 0) {
+    if (read_all(fd, buf, len) != 0) {
         free(buf);
         return -1;
     }

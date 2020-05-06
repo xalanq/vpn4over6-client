@@ -30,19 +30,30 @@ class FlowStat {
         this.uploadBytesPerSec = uploadBytesPerSec;
     }
 
+    private String parseBytes(long bytes) {
+        if (bytes <= 1024) {
+            return bytes + " B";
+        } else if (bytes <= 1024 * 1024) {
+            return String.format(Locale.CHINA, "%.1f KB", bytes / 1024.0);
+        } else if (bytes <= 1024 * 1024 * 1024) {
+            return String.format(Locale.CHINA, "%.1f MB", bytes / 1024.0 / 1024.0);
+        }
+        return String.format(Locale.CHINA, "%.1f GB", bytes / 1024.0 / 1024.0 / 1024.0);
+    }
+
     @NonNull
     @Override
     public String toString() {
         return String.format(
             Locale.CHINA,
-            "上传: %d 个包 / %d 字节 / %d B/s\n" +
-                "下载: %d 个包 / %d 字节 / %d B/s\n",
+            "上传: %d 个包 / %s / %s/s\n" +
+                "下载: %d 个包 / %s / %s/s\n",
             uploadTotalPackets,
-            uploadTotalBytes,
-            uploadBytesPerSec,
+            parseBytes(uploadTotalBytes),
+            parseBytes(uploadBytesPerSec),
             downloadTotalPackets,
-            downloadTotalBytes,
-            downloadBytesPerSec
+            parseBytes(downloadTotalBytes),
+            parseBytes(downloadBytesPerSec)
         );
     }
 }

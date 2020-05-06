@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private Timer timer;
     private ServiceConnection vpn4Over6ServiceConnection;
     private Vpn4Over6Service vpn4Over6Service;
+    private boolean running;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         textViewLog.setMovementMethod(new ScrollingMovementMethod());
         textViewLog.setTextIsSelectable(true);
         textViewFlow.setText(new FlowStat().toString());
+        running = false;
     }
 
     @Override
@@ -70,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void log(String msg) {
-        Log.d(TAG, "log: " + msg);
         final TextView view = textViewLog;
         view.append(new SimpleDateFormat("hh:mm:ss", Locale.CHINA).format(new Date()));
         view.append(" ");
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
     void connect() {
         Log.d(TAG, "connect");;
         log("启动！");
+        running = true;
         vpn4Over6Service.connect();
         NetworkState.getInstance().start();
         if (timer != null)  {
@@ -109,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
 
     void disconnect() {
         Log.d(TAG, "disconnect");
+        running = false;
         vpn4Over6Service.disconnect();
         NetworkState.getInstance().reset();
         textViewFlow.setText(new FlowStat().toString());
@@ -134,18 +137,27 @@ public class MainActivity extends AppCompatActivity {
                     vpn4Over6Service.setListener(new Vpn4Over6Service.Listener() {
                         @Override
                         public void log(String msg) {
-                            MainActivity.this.log(msg);
+                            Log.d(TAG, "listener log: " + msg);
+                            if (running) {
+                                MainActivity.this.log(msg);
+                            }
                         }
 
                         @Override
                         public void off(String msg) {
-                            log(msg);
-                            trigger.setChecked(false);
+                            Log.d(TAG, "listener off: " + msg);
+                            if (running) {
+                                MainActivity.this.log(msg);
+                                trigger.setChecked(false);
+                            }
                         }
 
                         @Override
                         public void stat(FlowStat stat) {
-                            textViewFlow.setText(stat.toString());
+                            Log.d(TAG, "listener stat: " + stat.toString());
+                            if (running) {
+                                textViewFlow.setText(stat.toString());
+                            }
                         }
                     });
                     connect();

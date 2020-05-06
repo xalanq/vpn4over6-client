@@ -30,7 +30,7 @@ int read_all(int fd, void *buf, int len) {
             return -1;
         c += t;
     }
-    return c;
+    return 0;
 }
 
 int write_all(int fd, void *buf, int len) {
@@ -41,5 +41,5 @@ int write_all(int fd, void *buf, int len) {
             return -1;
         c += t;
     }
-    return c;
+    return 0;
 }

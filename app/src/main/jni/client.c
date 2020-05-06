@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
+#include <pthread.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -17,6 +18,7 @@
 static int fd;
 static int tun_fd;
 static int running;
+static pthread_mutex_t mutex;
 
 void client_connect(const char *ip, int port) {
     int err;
@@ -48,13 +50,13 @@ void client_connect(const char *ip, int port) {
     msg.length = 5;
     msg.type = MSG_IP_REQUEST;
 
-    if (msg_write(fd, &msg) < 0) {
+    if (msg_write(fd, &msg) != 0) {
         logger_off("无法发出 IP 请求");
         goto fail;
     }
 
     do {
-        if (msg_read(fd, &msg) < 0) {
+        if (msg_read(fd, &msg) != 0) {
             logger_off("读取数据包出错");
             goto fail;
         }
@@ -88,13 +90,13 @@ void client_disconnect() {
     close(fd);
 }
 
-time_t lastTime;
-long long download_total_bytes;
-long long download_total_packets;
-long long download_bytes_per_sec;
-long long upload_total_bytes;
-long long upload_total_packets;
-long long upload_bytes_per_sec;
+static time_t lastTime;
+static long long download_total_bytes;
+static long long download_total_packets;
+static long long download_bytes_per_sec;
+static long long upload_total_bytes;
+static long long upload_total_packets;
+static long long upload_bytes_per_sec;
 
 void client_listen_server() {
     struct Msg msg;
@@ -103,12 +105,12 @@ void client_listen_server() {
     download_total_packets = 0;
     download_bytes_per_sec = 0;
     while (running) {
-        if (msg_read(fd, &msg) <= 0)
+        if (msg_read(fd, &msg) != 0)
             goto fail;
         LOGD("packet recv len: %d, type %d", msg.length, msg.type);
         switch (msg.type) {
         case MSG_NET_RESPONSE:
-            if (write_all(tun_fd, msg.data, msg.length - 5) <= 0)
+            if (write_all(tun_fd, msg.data, msg.length - 5) != 0)
                 goto fail;
             download_total_bytes += msg.length - 5;
             download_total_packets++;
@@ -145,7 +147,7 @@ void client_listen_client() {
         if (msg.length <= 0)
             goto fail;
         msg.length += 5;
-        if (msg_write(fd, &msg) <= 0)
+        if (msg_write_safe(fd, &msg, &mutex) != 0)
             goto fail;
         upload_total_bytes += msg.length - 5;
         upload_total_packets++;
@@ -182,8 +184,14 @@ void client_schedule() {
         download_bytes_per_sec = 0;
         upload_bytes_per_sec = 0;
         if (c % 20 == 0) {
-            if (msg_write(fd, &msg) > 0)
+            if (msg_write_safe(fd, &msg, &mutex) != 0) {
+                logger_log("发心跳包出错");
+                int err = errno;
+                logger_log("%s failed: %s (%d)\n", __FUNCTION__, strerror(errno), errno);
+                errno = err;
+            } else {
                 logger_log("发送了一个心跳包");
+            }
         }
         if (c % 60 == 0) {
             now = time(NULL);
@@ -191,6 +199,7 @@ void client_schedule() {
                 logger_off("连接超时");
                 return;
             }
+            c = 0;
         }
     }
 }
