@@ -2,16 +2,20 @@ package com.xalanq.vpn4over6;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import java.io.StringReader;
 import java.lang.ref.WeakReference;
+import java.util.Scanner;
 
 public class DataHandler extends Handler {
     static final int MSG_OFF = 0;
     static final int MSG_LOG = 1;
     static final int MSG_IP = 2;
     static final int MSG_RUN = 3;
+    static final int MSG_STAT = 4;
 
     private WeakReference<Vpn4Over6Service> serviceWeakReference;
 
@@ -39,6 +43,20 @@ public class DataHandler extends Handler {
                 case MSG_RUN:
                     service.listener.log((String) msg.obj);
                     service.run();
+                    break;
+                case MSG_STAT:
+                    String s = (String)msg.obj;
+                    Log.d("GGGG", "handleMessage: " + s);
+                    Scanner in = new Scanner(new StringReader(s));
+                    service.listener.stat(new FlowStat(
+                        in.nextLong(),
+                        in.nextLong(),
+                        in.nextLong(),
+                        in.nextLong(),
+                        in.nextLong(),
+                        in.nextLong()
+                    ));
+                    break;
                 default:
                     break;
             }
@@ -69,6 +87,13 @@ public class DataHandler extends Handler {
     static Message run(String msg) {
         Message m = new Message();
         m.what = MSG_RUN;
+        m.obj = msg;
+        return m;
+    }
+
+    static Message stat(String msg) {
+        Message m = new Message();
+        m.what = MSG_STAT;
         m.obj = msg;
         return m;
     }

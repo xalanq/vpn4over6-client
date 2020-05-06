@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
         textViewLog = findViewById(R.id.log);
         textViewLog.setMovementMethod(new ScrollingMovementMethod());
         textViewLog.setTextIsSelectable(true);
+        textViewFlow.setText(new FlowStat().toString());
     }
 
     @Override
@@ -66,11 +67,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         return true;
-    }
-
-    void updateUI() {
-        NetworkState.getInstance().update(this).updateUI(textViewNetwork);
-        FlowState.getInstance().update(this).updateUI(textViewFlow);
     }
 
     void log(String msg) {
@@ -115,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "disconnect");
         vpn4Over6Service.disconnect();
         NetworkState.getInstance().reset();
-        FlowState.getInstance().reset();
+        textViewFlow.setText(new FlowStat().toString());
         if (timer != null)  {
             timer.cancel();
         }
@@ -145,6 +141,11 @@ public class MainActivity extends AppCompatActivity {
                         public void off(String msg) {
                             log(msg);
                             trigger.setChecked(false);
+                        }
+
+                        @Override
+                        public void stat(FlowStat stat) {
+                            textViewFlow.setText(stat.toString());
                         }
                     });
                     connect();
@@ -187,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateUI();
+                        NetworkState.getInstance().update(MainActivity.this).updateUI(textViewNetwork);
                     }
                 });
             }

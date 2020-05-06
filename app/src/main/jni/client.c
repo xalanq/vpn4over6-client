@@ -89,103 +89,108 @@ void client_disconnect() {
 }
 
 time_t lastTime;
+long long download_total_bytes;
+long long download_total_packets;
+long long download_bytes_per_sec;
+long long upload_total_bytes;
+long long upload_total_packets;
+long long upload_bytes_per_sec;
 
 void client_listen_server() {
-    int err;
     struct Msg msg;
 
+    download_total_bytes = 0;
+    download_total_packets = 0;
+    download_bytes_per_sec = 0;
     while (running) {
-        if (msg_read(fd, &msg) < 0) {
-            logger_off("读取服务器发来的数据包出错");
+        if (msg_read(fd, &msg) <= 0)
             goto fail;
-        }
         LOGD("packet recv len: %d, type %d", msg.length, msg.type);
         switch (msg.type) {
         case MSG_NET_RESPONSE:
-            if (write_all(tun_fd, msg.data, msg.length - 5) < 0) {
-                logger_off("写入 /dev/tun 出错");
+            if (write_all(tun_fd, msg.data, msg.length - 5) <= 0)
                 goto fail;
-            }
+            download_total_bytes += msg.length - 5;
+            download_total_packets++;
+            download_bytes_per_sec += msg.length - 5;
             break;
         case MSG_KEEP_ALIVE:
             lastTime = time(NULL);
-            logger_log("收到一个心跳包");
+            logger_log("收到了一个心跳包");
+            break;
+        }
+        continue;
+    fail:
+        if (errno == 11)
+            sleep(0);
+        else {
+            int err = errno;
+            logger_log("%s failed: %s (%d)\n", __FUNCTION__, strerror(errno), errno);
+            errno = err;
+            logger_off("收数据包出错");
             break;
         }
     }
-
-    return;
-
-fail:
-    err = errno;
-    LOGE("%s failed: %s (%d)\n", __FUNCTION__, strerror(err), err);
-    errno = err;
 }
 
 void client_listen_client() {
-    int err;
     struct Msg msg;
     msg.type = MSG_NET_REQUEST;
 
+    upload_total_bytes = 0;
+    upload_total_packets = 0;
+    upload_bytes_per_sec = 0;
     while (running) {
         msg.length = read(tun_fd, msg.data, (sizeof(struct Msg)) - 5);
-        if (msg.length < 0) {
-            logger_off("读取本地发送的数据包出错");
+        if (msg.length <= 0)
             goto fail;
-        }
-        if (msg.length == 0) {
+        msg.length += 5;
+        if (msg_write(fd, &msg) <= 0)
+            goto fail;
+        upload_total_bytes += msg.length - 5;
+        upload_total_packets++;
+        upload_bytes_per_sec += msg.length - 5;
+        LOGD("packet send len: %d, type %d", msg.length, msg.type);
+        continue;
+    fail:
+        if (errno == 11)
             sleep(0);
-        } else {
-            msg.length += 5;
-            if (msg_write(fd, &msg) < 0) {
-                logger_off("发送数据包失败");
-                goto fail;
-            }
-            LOGD("packet send len: %d, type %d", msg.length, msg.type);
+        else {
+            int err = errno;
+            logger_log("%s failed: %s (%d)\n", __FUNCTION__, strerror(errno), errno);
+            errno = err;
+            logger_off("发数据包出错");
+            break;
         }
     }
-
-    return;
-
-fail:
-    err = errno;
-    LOGE("%s failed: %s (%d)\n", __FUNCTION__, strerror(err), err);
-    errno = err;
 }
 
 void client_schedule() {
-    int err;
     struct Msg msg;
     time_t now;
     msg.type = MSG_KEEP_ALIVE;
 
+    int c = 0;
     while (running) {
-        sleep(20);
-        if (msg_write(fd, &msg) < 0) {
-            logger_off("发送心跳包失败");
-            goto fail;
+        sleep(1);
+        c++;
+        logger_stat(
+            "%lld %lld %lld %lld %lld %lld",
+            download_total_bytes, download_total_packets, download_bytes_per_sec,
+            upload_total_bytes, upload_total_packets, upload_bytes_per_sec
+        );
+        download_bytes_per_sec = 0;
+        upload_bytes_per_sec = 0;
+        if (c % 20 == 0) {
+            if (msg_write(fd, &msg) > 0)
+                logger_log("发送了一个心跳包");
         }
-        sleep(20);
-        if (msg_write(fd, &msg) < 0) {
-            logger_off("发送心跳包失败");
-            goto fail;
-        }
-        sleep(20);
-        now = time(NULL);
-        if (now - lastTime > 60) {
-            logger_off("连接超时");
-            goto fail;
-        }
-        if (msg_write(fd, &msg) < 0) {
-            logger_off("发送心跳包失败");
-            goto fail;
+        if (c % 60 == 0) {
+            now = time(NULL);
+            if (now - lastTime > 60) {
+                logger_off("连接超时");
+                return;
+            }
         }
     }
-
-    return;
-
-fail:
-    err = errno;
-    LOGE("%s failed: %s (%d)\n", __FUNCTION__, strerror(err), err);
-    errno = err;
 }

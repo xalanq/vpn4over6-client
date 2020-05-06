@@ -98,6 +98,7 @@ public class Vpn4Over6Service extends VpnService {
     public interface Listener {
         void off(String msg);
         void log(String msg);
+        void stat(FlowStat stat);
     }
 
     Listener listener;

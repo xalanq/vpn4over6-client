@@ -112,7 +112,7 @@ class NetworkState {
                 Locale.CHINA,
                 "运行时间: %s\n" +
                     "网络状态: %s   是否支持 IPV6: %s\n" +
-                    "服务器 IPV6 地址: %s  端口: %d\n",
+                    "服务器 IPV6 地址: [%s]:%d\n",
                 runningTime,
                 networkState,
                 hasIPV6 ? "是" : "否",

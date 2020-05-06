@@ -56,6 +56,9 @@ class DataLoader {
                             case DataHandler.MSG_RUN:
                                 handler.sendMessage(DataHandler.run(in.nextLine().substring(1)));
                                 break;
+                            case DataHandler.MSG_STAT:
+                                handler.sendMessage(DataHandler.stat(in.nextLine().substring(1)));
+                                break;
                             default:
                         }
                     }
