@@ -36,7 +36,6 @@ public class DataHandler extends Handler {
                     break;
                 case MSG_IP:
                     String data = (String) msg.obj;
-                    service.listener.log(data);
                     service.writeFd(data);
                     break;
                 case MSG_RUN:

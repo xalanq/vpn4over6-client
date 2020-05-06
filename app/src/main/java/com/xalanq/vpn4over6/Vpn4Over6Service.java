@@ -7,6 +7,7 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import java.io.StringReader;
+import java.util.Locale;
 import java.util.Scanner;
 
 public class Vpn4Over6Service extends VpnService {
@@ -62,6 +63,15 @@ public class Vpn4Over6Service extends VpnService {
         String dns1 = in.next();
         String dns2 = in.next();
         String dns3 = in.next();
+        listener.log(String.format(
+            Locale.CHINA,
+            "IP: %s, Route: %s, DNS1: %s, DNS2: %s, DNS3: %s",
+            ip,
+            route,
+            dns1,
+            dns2,
+            dns3
+        ));
         VpnIPv4 = ip;
         int fd = in.nextInt();
 
