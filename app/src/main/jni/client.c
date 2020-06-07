@@ -171,6 +171,7 @@ void client_schedule() {
     struct Msg msg;
     time_t now;
     msg.type = MSG_KEEP_ALIVE;
+    msg.length = 5;
 
     int c = 0;
     while (running) {
